@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Продажи ЖК · март–сентябрь 2026</title>
+<style>
+:root{--ink:#1b1f27;--muted:#6b7280;--line:#e6e8ec;--blue:#1f5fa8;--soft:#f5f7fa}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:var(--ink);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1440px;margin:0 auto;padding:20px 22px 28px}
+h1{font-size:25px;line-height:1.25;margin:0 0 6px;max-width:1150px}
+.sub{color:var(--muted);font-size:13.5px}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:14px 0 12px}
+.kpi{background:var(--soft);border-radius:10px;padding:10px 14px}
+.kpi .n{font-size:12px;color:var(--muted)}
+.kpi .v{font-size:24px;font-weight:700;margin:2px 0 0;white-space:nowrap}
+.kpi .s{font-size:12px;color:var(--muted)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center;min-height:30px;margin-bottom:8px;font-size:13px}
+.chip{background:#eaf1fb;color:var(--blue);border-radius:999px;padding:3px 10px;cursor:pointer}
+.chip:hover{background:#d8e6f8}
+.reset{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 12px;cursor:pointer;font-size:13px}
+.grid{display:grid;grid-template-columns:minmax(0,1.75fr) minmax(0,1fr);gap:16px}
+.card{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.card h2{font-size:15px;margin:0}
+.card .hint{font-size:12px;color:var(--muted);margin:2px 0 6px}
+.side{display:grid;gap:16px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;margin:4px 0}
+.seg button{border:0;background:#fff;padding:5px 12px;font-size:13px;cursor:pointer;color:var(--ink)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:#1b1f27;color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:4px 18px;font-size:12px;color:#444;margin:4px 0 2px;align-items:center}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.dot{display:inline-block;border-radius:50%}
+.grad{display:inline-block;width:80px;height:9px;border-radius:3px}
+.tip{position:fixed;z-index:9;pointer-events:none;background:#fff;border:1px solid var(--line);box-shadow:0 8px 28px rgba(20,25,40,.18);border-radius:12px;padding:10px 12px;font-size:12.5px;min-width:230px;display:none}
+.tip .t{font-weight:700;margin-bottom:4px}
+.tip .r{display:flex;justify-content:space-between;gap:16px}
+.tip .r span:first-child{color:var(--muted)}
+svg text{font:11.5px -apple-system,"Segoe UI",Roboto,Arial,sans-serif;fill:#6b7280}
+svg .ann{fill:#1b1f27;font-size:12px}
+svg .dark{fill:#1b1f27}
+.clk{cursor:pointer}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 id="headline">За 7 месяцев продано 68% квартир: виды на сад, Садовое и реку уходят лучше всего, а двор и улица отстают — им нужна помощь</h1>
+  <div class="sub">Продажи ЖК, 367 квартир в 6 корпусах, сделки 2 марта — 30 сентября 2026. Все графики связаны: кликните колонку, менеджера, клетку таблицы или выделите недели — остальные графики отфильтруются.</div>
+  <div class="kpis" id="kpis"></div>
+  <div class="filters" id="filters"></div>
+  <div class="grid">
+    <div class="card">
+      <h2>Какие квартиры продаются лучше, а какие хуже</h2>
+      <div class="hint">Кружок — квартира. Высота — цена за м². Заполненный — продана (тёмный — быстро), пустой — ещё в продаже. Размер — площадь. Клик по колонке — фильтр.</div>
+      <div><span class="sub" style="margin-right:6px">Группировать по:</span><div class="seg" id="seg"></div></div>
+      <div class="legend">
+        <span><i class="dot" style="width:12px;height:12px;background:#fff;border:2px solid #8b94a3"></i>в продаже</span>
+        <span><i class="grad" id="grad"></i>продана: за 3 → 42 дня</span>
+        <span><i class="dot" style="width:7px;height:7px;background:#888"></i><i class="dot" style="width:14px;height:14px;background:#888"></i>площадь</span>
+      </div>
+      <div id="main"></div>
+    </div>
+    <div class="side">
+      <div class="card">
+        <h2>Продажи по неделям</h2>
+        <div class="hint" id="weekHint">Сделок в неделю. Выделите мышкой период, чтобы отфильтровать.</div>
+        <div id="weeks"></div>
+      </div>
+      <div class="card">
+        <h2>Менеджеры: кому премию, с кем поговорить</h2>
+        <div class="hint">Полоса — выручка. Справа — сделок, средняя скидка и дней до сделки. Клик — фильтр.</div>
+        <div id="mgr"></div>
+      </div>
+      <div class="card">
+        <h2>Что осталось продать</h2>
+        <div class="hint">Непроданные квартиры по корпусам и видам из окон. Клик по клетке — фильтр.</div>
+        <div id="left"></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+<script src="vendor/d3.min.js"></script>
+<script src="data.js"></script>
+<script>
+/* ===== данные ===== */
+const A=window.APTS;
+const fmt=n=>Math.round(n).toLocaleString('ru-RU');
+const money=n=>n>=1e9?(n/1e9).toFixed(1).replace('.',',')+' млрд ₽':n>=1e6?(n/1e6).toFixed(n>=1e8?0:1).replace('.',',')+' млн ₽':fmt(n)+' ₽';
+const W0=new Date(2026,2,2); // понедельник первой недели
+A.forEach(a=>{
+  a.sold=a.days!==null; a.pv=a.view.split(' и ')[0].trim();
+  if(a.sold){const [d,m,y]=a.dealDate.split('.').map(Number); a.date=new Date(y,m-1,d); a.wk=Math.floor(d3.timeDay.count(W0,a.date)/7);}
+});
+const NW=d3.max(A.filter(a=>a.sold),a=>a.wk)+1;
+const wkStart=i=>d3.timeDay.offset(W0,i*7);
+const dm=d=>d3.timeFormat('%d.%m')(d);
+const ICON={'в сад':'🌳','на Садовое':'🏙️','на реку':'🌊','на улицу':'🚦','во двор':'🏡','в окна ЖК':'🏢'};
+const VIEWS=['в сад','на Садовое','на реку','на улицу','во двор','в окна ЖК'];
+const CORPS=[...new Set(A.map(a=>a.corp))].sort();
+const floorBin=f=>f<=5?'2–5 эт.':f<=10?'6–10 эт.':f<=15?'11–15 эт.':f<=20?'16–20 эт.':'21–29 эт.';
+const GROUPS={
+  'Вид из окон':{key:a=>a.pv,sort:'rate',label:k=>(ICON[k]||'')+' '+k},
+  'Корпус':{key:a=>'Корпус '+a.corp.replace('К',''),sort:'rate'},
+  'Комнат':{key:a=>a.rooms+'-комн.',sort:'natural'},
+  'Этаж':{key:a=>floorBin(a.floor),order:['2–5 эт.','6–10 эт.','11–15 эт.','16–20 эт.','21–29 эт.']},
+};
+
+/* ===== кросс-фильтр ===== */
+const F={grp:null,mgr:null,wk:null,cell:null};
+let GNAME='Вид из окон';
+const passes=(a,except)=>{
+  if(except!=='grp'&&F.grp!==null&&GROUPS[GNAME].key(a)!==F.grp) return false;
+  if(except!=='mgr'&&F.mgr!==null&&a.manager!==F.mgr) return false;
+  if(except!=='wk'&&F.wk&&!(a.sold&&a.wk>=F.wk[0]&&a.wk<=F.wk[1])) return false;
+  if(except!=='cell'&&F.cell&&!(a.corp===F.cell[0]&&a.pv===F.cell[1])) return false;
+  return true;
+};
+const tip=d3.select('#tip');
+function showTip(ev,title,rows){
+  tip.style('display','block').html(`<div class="t">${title}</div>`+rows.map(x=>`<div class="r"><span>${x[0]}</span><span>${x[1]}</span></div>`).join(''));
+  tip.style('left',(ev.clientX+16>innerWidth-260?ev.clientX-260:ev.clientX+16)+'px').style('top',Math.max(8,Math.min(ev.clientY+10,innerHeight-320))+'px');
+}
+const hideTip=()=>tip.style('display','none');
+
+/* ===== KPI ===== */
+function renderKPI(){
+  const L=A.filter(a=>passes(a)), S=L.filter(a=>a.sold), U=L.filter(a=>!a.sold);
+  const rev=d3.sum(S,a=>a.deal), disc=d3.sum(S,a=>a.discount), cost=d3.sum(S,a=>a.cost);
+  const weeks=F.wk?F.wk[1]-F.wk[0]+1:NW, pace=S.length/weeks;
+  const k=[
+    (F.mgr||F.wk)?['Сделок',`${S.length}`,F.mgr?'у выбранного менеджера':'за выбранные недели']:['Продано',`${S.length} из ${L.length}`,L.length?Math.round(S.length/L.length*100)+'% квартир':''],
+    ['Выручка',money(rev),S.length?'в среднем '+money(rev/S.length)+' за сделку':''],
+    ['Потеряли на скидках',money(disc),cost?(disc/cost*100).toFixed(1).replace('.',',')+'% от стоимости, '+S.filter(a=>a.discount>0).length+' сделок':''],
+    (F.mgr||F.wk)?['Ещё в продаже','—','остаток не зависит от менеджера и недель']:['Ещё в продаже',`${U.length} квартир`,U.length?'на '+money(d3.sum(U,a=>a.cost)):'всё продано'],
+    ['Темп продаж',pace.toFixed(1).replace('.',',')+' в неделю',(!F.mgr&&!F.wk&&U.length&&pace)?`остаток уйдёт за ~${Math.ceil(U.length/pace)} нед.`:'сделок в неделю']
+  ];
+  d3.select('#kpis').html(k.map(x=>`<div class="kpi"><div class="n">${x[0]}</div><div class="v">${x[1]}</div><div class="s">${x[2]}</div></div>`).join(''));
+}
+
+/* ===== основной график ===== */
+const soldDays=A.filter(a=>a.sold).map(a=>a.days);
+const color=d3.scaleSequential(t=>d3.interpolateBlues(0.95-0.55*t)).domain(d3.extent(soldDays)).clamp(true);
+document.getElementById('grad').style.background=`linear-gradient(90deg,${[0,.5,1].map(t=>d3.interpolateBlues(.95-.55*t)).join(',')})`;
+const R=d3.scaleSqrt().domain(d3.extent(A,a=>a.area)).range([3.2,8.6]);
+const MW=880,MH=780,MM={l:62,r:6,t:78,b:10};
+const msvg=d3.select('#main').append('svg').attr('viewBox',`0 0 ${MW} ${MH}`).attr('width','100%');
+const ppm=d3.extent(A,a=>a.ppm);
+const my=d3.scaleLinear().domain([ppm[0]-40000,ppm[1]+40000]).range([MH-MM.b,MM.t]);
+const bgLayer=msvg.append('g'), axL=msvg.append('g');
+d3.range(1e6,2.2e6,0.2e6).filter(v=>v>=my.domain()[0]&&v<=my.domain()[1]).forEach(v=>{
+  axL.append('line').attr('x1',MM.l).attr('x2',MW-MM.r).attr('y1',my(v)).attr('y2',my(v)).attr('stroke','#eef0f3');
+  axL.append('text').attr('x',MM.l-8).attr('y',my(v)+4).attr('text-anchor','end').text((v/1e6).toFixed(1).replace('.',','));
+});
+axL.append('text').attr('x',MM.l-8).attr('y',MM.t-2).attr('text-anchor','end').text('млн ₽');
+axL.append('text').attr('x',MM.l-8).attr('y',MM.t+11).attr('text-anchor','end').text('за м²');
+const head=msvg.append('g'), ann=msvg.append('g');
+const dots=msvg.append('g').selectAll('circle').data(A).join('circle').attr('r',a=>R(a.area)).attr('cx',MW/2).attr('cy',a=>my(a.ppm))
+  .attr('fill',a=>a.sold?color(a.days):'#fff').attr('stroke',a=>a.sold?'#fff':'#8b94a3').attr('stroke-width',a=>a.sold?.7:1.5);
+const hl=msvg.append('circle').attr('fill','none').attr('stroke','#e11d48').attr('stroke-width',2.4).style('pointer-events','none').style('display','none');
+dots.on('mousemove',(ev,a)=>{
+  showTip(ev,a.sold?'Продана':'В продаже',[['Квартира',a.id],['Корпус · этаж',`${a.corp} · ${a.floor}`],['Комнат · площадь',`${a.rooms} · ${a.area} м²`],['Вид',a.view],['Цена за м²',fmt(a.ppm)+' ₽'],['Стоимость',money(a.cost)],
+    ...(a.sold?[['Дата сделки',a.dealDate],['Дней от обращения',a.days],['Скидка',a.discount>0?money(a.discount):'нет'],['Менеджер',a.manager]]:[])]);
+  hl.style('display',null).attr('cx',+ev.currentTarget.getAttribute('cx')).attr('cy',+ev.currentTarget.getAttribute('cy')).attr('r',R(a.area)+2.5);
+}).on('mouseleave',()=>{hideTip();hl.style('display','none');});
+let COLS=[];
+function layoutMain(){
+  const g=GROUPS[GNAME], groups=d3.groups(A,g.key).map(([k,v])=>({k,v,n:v.length,rateAll:v.filter(a=>a.sold).length/v.length}));
+  if(g.order) groups.sort((a,b)=>g.order.indexOf(a.k)-g.order.indexOf(b.k));
+  else if(g.sort==='rate') groups.sort((a,b)=>b.rateAll-a.rateAll);
+  else groups.sort((a,b)=>a.k.localeCompare(b.k,'ru',{numeric:true}));
+  const w=(MW-MM.l-MM.r)/groups.length;
+  groups.forEach((x,i)=>{x.cx=MM.l+w*(i+.5);x.x0=MM.l+w*i;x.w=w;
+    const nodes=x.v.map(a=>({a,x:x.cx,y:my(a.ppm)}));
+    const sim=d3.forceSimulation(nodes).force('x',d3.forceX(x.cx).strength(.06)).force('y',d3.forceY(d=>my(d.a.ppm)).strength(1)).force('c',d3.forceCollide(d=>R(d.a.area)+.8)).stop();
+    for(let t=0;t<220;t++) sim.tick();
+    nodes.forEach(n=>{n.a.tx=Math.max(x.cx-w/2+5,Math.min(x.cx+w/2-5,n.x));n.a.ty=my(n.a.ppm);});
+  });
+  dots.transition().duration(650).attr('cx',a=>a.tx).attr('cy',a=>a.ty);
+  head.selectAll('*').remove(); bgLayer.selectAll('*').remove();
+  groups.forEach((x,i)=>{
+    x.bg=bgLayer.append('rect').attr('x',x.x0+2).attr('y',MM.t-74).attr('width',x.w-4).attr('height',MH-MM.t+72).attr('rx',8).attr('fill','#eaf1fb').attr('opacity',0);
+    if(i>0) bgLayer.append('line').attr('x1',x.x0).attr('x2',x.x0).attr('y1',MM.t-16).attr('y2',MH-MM.b).attr('stroke','#eef0f3');
+    head.append('text').attr('x',x.cx).attr('y',MM.t-58).attr('text-anchor','middle').attr('class','dark').style('font-weight',700).style('font-size','13.5px').text(g.label?g.label(x.k):x.k);
+    x.tS=head.append('text').attr('x',x.cx).attr('y',MM.t-41).attr('text-anchor','middle');
+    const bw=Math.min(90,x.w-44), bx=x.cx-bw/2-12;
+    head.append('rect').attr('x',bx).attr('y',MM.t-33).attr('width',bw).attr('height',8).attr('rx',2).attr('fill','#e3e6eb');
+    x.bar=head.append('rect').attr('x',bx).attr('y',MM.t-33).attr('height',8).attr('rx',2).attr('fill','#1f5fa8'); x.bw=bw;
+    x.tP=head.append('text').attr('x',bx+bw+5).attr('y',MM.t-25.5).style('font-weight',700).style('fill','#1f5fa8');
+    bgLayer.append('rect').attr('class','clk').attr('x',x.x0).attr('y',0).attr('width',x.w).attr('height',MH).attr('fill','transparent')
+      .on('click',()=>{F.grp=F.grp===x.k?null:x.k;update();});
+  });
+  COLS=groups;
+  setTimeout(drawAnn,680);
+}
+function renderMain(){
+  dots.attr('opacity',a=>passes(a)?1:.1);
+  COLS.forEach(x=>{
+    const L=x.v.filter(a=>passes(a,'grp')), s=L.filter(a=>a.sold).length, rate=L.length?s/L.length:0;
+    if(F.mgr||F.wk){const mx=d3.max(COLS,c=>c.v.filter(a=>passes(a,'grp')&&a.sold).length)||1;
+      x.tS.text(`сделок: ${s}`); x.bar.attr('width',x.bw*s/mx); x.tP.text('');}
+    else{x.tS.text(`продано ${s} из ${L.length}`); x.bar.attr('width',x.bw*rate); x.tP.text(Math.round(rate*100)+'%');}
+    x.bg.attr('opacity',F.grp===x.k?1:0);
+  });
+  ann.style('opacity',(GNAME==='Вид из окон'&&!F.grp&&!F.mgr&&!F.wk&&!F.cell)?1:0);
+}
+function drawAnn(){
+  ann.selectAll('*').remove(); if(GNAME!=='Вид из окон') return;
+  const note=(list,lines,side)=>{
+    const x0=d3.min(list,a=>a.tx-R(a.area)),x1=d3.max(list,a=>a.tx+R(a.area)),y0=d3.min(list,a=>a.ty-R(a.area)),y1=d3.max(list,a=>a.ty+R(a.area));
+    const g=ann.append('g').style('pointer-events','none');
+    if(side==='right'){const xb=x1+6;g.append('path').attr('d',`M${xb-4},${y0}H${xb}V${y1}H${xb-4}`).attr('fill','none').attr('stroke','#1b1f27');
+      lines.forEach((t,i)=>g.append('text').attr('class','ann').attr('x',xb+6).attr('y',(y0+y1)/2-(lines.length-1)*7.5+i*15+4).text(t));}
+    else{g.append('path').attr('d',`M${x0},${y0-4}V${y0-8}H${x1}V${y0-4}`).attr('fill','none').attr('stroke','#1b1f27');
+      lines.forEach((t,i)=>g.append('text').attr('class','ann').attr('x',(x0+x1)/2).attr('y',y0-13-(lines.length-1-i)*15).attr('text-anchor','middle').text(t));}
+  };
+  note(A.filter(a=>a.pv==='на Садовое'&&a.ppm<1.05e6),['2–6 этажи:','продана 1','из 10'],'right');
+  note(A.filter(a=>a.pv==='в окна ЖК'),['0 продаж'],'top');
+  note(A.filter(a=>a.pv==='в сад'),['все продажи —','март–июль'],'top');
+}
+
+/* ===== продажи по неделям ===== */
+const WW=460,WH=180,WM={l:30,r:8,t:10,b:24};
+const wsvg=d3.select('#weeks').append('svg').attr('viewBox',`0 0 ${WW} ${WH}`).attr('width','100%');
+const wx=d3.scaleBand().domain(d3.range(NW)).range([WM.l,WW-WM.r]).padding(.18);
+const wyMax=d3.max(d3.rollups(A.filter(a=>a.sold),v=>v.length,a=>a.wk),d=>d[1]);
+const wy=d3.scaleLinear().domain([0,wyMax]).nice().range([WH-WM.b,WM.t]);
+wsvg.append('g').selectAll('line').data(wy.ticks(4)).join('line').attr('x1',WM.l).attr('x2',WW-WM.r).attr('y1',d=>wy(d)).attr('y2',d=>wy(d)).attr('stroke','#eef0f3');
+wsvg.append('g').selectAll('text').data(wy.ticks(4)).join('text').attr('x',WM.l-5).attr('y',d=>wy(d)+4).attr('text-anchor','end').text(d=>d);
+const MONTHS_SHORT=['янв','фев','мар','апр','май','июн','июл','авг','сен','окт','ноя','дек'];
+d3.range(NW).forEach(i=>{const d=wkStart(i);const prev=wkStart(i-1);if(i===0||d.getMonth()!==prev.getMonth())wsvg.append('text').attr('x',wx(i)).attr('y',WH-6).text(MONTHS_SHORT[d.getMonth()]);});
+const avgLine=wsvg.append('line').attr('stroke','#e07b00').attr('stroke-dasharray','4 3').attr('x1',WM.l).attr('x2',WW-WM.r);
+const avgTxt=wsvg.append('text').attr('x',WW-WM.r).attr('text-anchor','end').style('fill','#e07b00');
+const wbars=wsvg.append('g').selectAll('rect').data(d3.range(NW)).join('rect').attr('x',i=>wx(i)).attr('width',wx.bandwidth()).attr('rx',1.5);
+const brush=d3.brushX().extent([[WM.l,WM.t],[WW-WM.r,WH-WM.b]]).on('end',ev=>{
+  if(!ev.sourceEvent) return;
+  if(!ev.selection){F.wk=null;update();return;}
+  const [x0,x1]=ev.selection, idx=d3.range(NW).filter(i=>wx(i)+wx.bandwidth()>x0&&wx(i)<x1);
+  F.wk=idx.length?[idx[0],idx[idx.length-1]]:null; update();
+});
+wbars.style('pointer-events','none');
+const bG=wsvg.append('g').call(brush);
+bG.select('.overlay').style('cursor','crosshair').on('mousemove.tip',ev=>{
+  const [mx]=d3.pointer(ev); const i=d3.range(NW).find(k=>mx>=wx(k)-wx.step()*wx.paddingInner()/2&&mx<wx(k)+wx.bandwidth()+wx.step()*wx.paddingInner()/2);
+  if(i===undefined){hideTip();return;}
+  const S=A.filter(a=>a.sold&&a.wk===i&&passes(a,'wk'));
+  showTip(ev,`Неделя ${dm(wkStart(i))} — ${dm(d3.timeDay.offset(wkStart(i),6))}`,[['Сделок',S.length],['Выручка',money(d3.sum(S,a=>a.deal))],['Скидки',money(d3.sum(S,a=>a.discount))]]);
+}).on('mouseleave.tip',hideTip);
+function renderWeeks(){
+  const cnt=d3.range(NW).map(i=>A.filter(a=>a.sold&&a.wk===i&&passes(a,'wk')).length);
+  wbars.attr('y',i=>wy(cnt[i])).attr('height',i=>wy(0)-wy(cnt[i])).attr('fill',i=>F.wk&&(i<F.wk[0]||i>F.wk[1])?'#cfd8e6':'#1f5fa8');
+  const avg=d3.mean(cnt); avgLine.attr('y1',wy(avg)).attr('y2',wy(avg)); avgTxt.text('');
+  if(!F.wk) bG.call(brush.move,null);
+  const tot=d3.sum(cnt), half=Math.floor(NW/2), first=d3.sum(cnt.slice(0,half)), second=d3.sum(cnt.slice(half));
+  document.getElementById('weekHint').innerHTML=`Сделок в неделю, <span style="color:#e07b00">пунктир</span> — среднее ${avg.toFixed(1).replace('.',',')}. Первая половина периода — ${first}, вторая — ${second}${second>=first?': продажи не замедляются':': продажи замедляются'}. Выделите мышкой период для фильтра.`;
+}
+
+/* ===== менеджеры ===== */
+const MGRS=d3.groups(A.filter(a=>a.sold),a=>a.manager).map(d=>d[0]);
+const GW=460,rowH=27,GM={l:128,t:18},GH=GM.t+MGRS.length*rowH+4;
+const gsvg=d3.select('#mgr').append('svg').attr('viewBox',`0 0 ${GW} ${GH}`).attr('width','100%');
+[['выручка',GM.l,'start'],['сделок',350,'end'],['скидка',400,'end'],['дней',452,'end']].forEach(([t,x,a])=>gsvg.append('text').attr('x',x).attr('y',11).attr('text-anchor',a).text(t));
+const gx=d3.scaleLinear().range([0,170]);
+function renderMgr(){
+  const st=MGRS.map(m=>{const S=A.filter(a=>a.sold&&a.manager===m&&passes(a,'mgr'));const cost=d3.sum(S,a=>a.cost);
+    return {m,n:S.length,rev:d3.sum(S,a=>a.deal),disc:cost?d3.sum(S,a=>a.discount)/cost:0,days:S.length?d3.mean(S,a=>a.days):0};}).sort((a,b)=>b.rev-a.rev);
+  gx.domain([0,d3.max(st,d=>d.rev)||1]);
+  const avgDisc=d3.sum(A.filter(a=>a.sold),a=>a.discount)/d3.sum(A.filter(a=>a.sold),a=>a.cost), avgDays=d3.mean(A.filter(a=>a.sold),a=>a.days);
+  const rows=gsvg.selectAll('g.row').data(st,d=>d.m).join(en=>{const g=en.append('g').attr('class','row clk');
+      g.append('rect').attr('class','hit').attr('x',0).attr('y',-rowH/2).attr('width',GW).attr('height',rowH).attr('rx',6);
+      g.append('text').attr('class','nm dark').attr('x',0).attr('y',4);
+      g.append('rect').attr('class','b').attr('x',GM.l).attr('y',-7).attr('height',14).attr('rx',2);
+      g.append('text').attr('class','rv').attr('y',4);
+      g.append('text').attr('class','n').attr('x',350).attr('y',4).attr('text-anchor','end');
+      g.append('text').attr('class','d').attr('x',400).attr('y',4).attr('text-anchor','end');
+      g.append('text').attr('class','dy').attr('x',452).attr('y',4).attr('text-anchor','end');
+      g.on('click',(ev,d)=>{F.mgr=F.mgr===d.m?null:d.m;update();});
+      g.on('mousemove',(ev,d)=>showTip(ev,d.m,[['Сделок',d.n],['Выручка',money(d.rev)],['Средняя скидка',(d.disc*100).toFixed(1).replace('.',',')+'% (по ЖК '+(avgDisc*100).toFixed(1).replace('.',',')+'%)'],['Дней до сделки',d.days.toFixed(1).replace('.',',')+' (по ЖК '+avgDays.toFixed(1).replace('.',',')+')']])).on('mouseleave',hideTip);
+      return g;});
+  rows.transition().duration(400).attr('transform',(d,i)=>`translate(0,${GM.t+i*rowH+rowH/2})`);
+  rows.select('.hit').attr('fill',d=>F.mgr===d.m?'#eaf1fb':'transparent');
+  rows.select('.nm').text(d=>d.m.split(' ')[0]+' '+d.m.split(' ')[1][0]+'.').style('font-weight',d=>F.mgr===d.m?700:400);
+  rows.select('.b').attr('width',d=>gx(d.rev)).attr('fill',d=>F.mgr&&F.mgr!==d.m?'#cfd8e6':'#1f5fa8');
+  rows.select('.rv').attr('x',d=>GM.l+gx(d.rev)+4).text(d=>d.n?(d.rev/1e9).toFixed(1).replace('.',','):'');
+  rows.select('.n').text(d=>d.n).attr('class','n dark');
+  rows.select('.d').text(d=>d.n?(d.disc*100).toFixed(1).replace('.',',')+'%':'—').style('fill',d=>d.disc>avgDisc*1.5?'#c0392b':'#6b7280').style('font-weight',d=>d.disc>avgDisc*1.5?700:400);
+  rows.select('.dy').text(d=>d.n?Math.round(d.days):'—').style('fill',d=>d.days>avgDays*1.25?'#c0392b':d.n&&d.days<avgDays*.6?'#15803d':'#6b7280').style('font-weight',d=>d.days>avgDays*1.25||(d.n&&d.days<avgDays*.6)?700:400);
+}
+d3.select('#mgr').append('div').attr('class','hint').style('margin-top','4px').html('<span style="color:#c0392b;font-weight:700">красным</span> — сильно хуже среднего по ЖК, <span style="color:#15803d;font-weight:700">зелёным</span> — сильно лучше. Выручка в млрд ₽.');
+
+/* ===== остатки: корпус × вид ===== */
+const LW=460,LM={l:104,t:22},cw=(LW-LM.l)/CORPS.length,ch=21,LH=LM.t+VIEWS.length*ch+4;
+const lsvg=d3.select('#left').append('svg').attr('viewBox',`0 0 ${LW} ${LH}`).attr('width','100%');
+CORPS.forEach((c,i)=>lsvg.append('text').attr('x',LM.l+cw*(i+.5)).attr('y',14).attr('text-anchor','middle').attr('class','dark').text(c));
+VIEWS.forEach((v,j)=>lsvg.append('text').attr('x',LM.l-6).attr('y',LM.t+ch*j+ch/2+4).attr('text-anchor','end').text(ICON[v]+' '+v));
+const cells=[];CORPS.forEach((c,i)=>VIEWS.forEach((v,j)=>cells.push({c,v,i,j})));
+const lc=lsvg.append('g').selectAll('g').data(cells).join('g').attr('class','clk').attr('transform',d=>`translate(${LM.l+cw*d.i},${LM.t+ch*d.j})`);
+lc.append('rect').attr('class','cell').attr('x',2).attr('y',1.5).attr('width',cw-4).attr('height',ch-3).attr('rx',4);
+lc.append('text').attr('class','ct').attr('x',cw/2).attr('y',ch/2+4).attr('text-anchor','middle');
+lc.on('click',(ev,d)=>{const L=A.filter(a=>a.corp===d.c&&a.pv===d.v);if(!L.length)return;F.cell=F.cell&&F.cell[0]===d.c&&F.cell[1]===d.v?null:[d.c,d.v];update();})
+  .on('mousemove',(ev,d)=>{const L=A.filter(a=>a.corp===d.c&&a.pv===d.v&&passes(a,'cell')&&passesNoSale(a));const U=L.filter(a=>!a.sold);
+    if(!L.length)return;showTip(ev,`${d.c} · вид ${d.v}`,[['Квартир',L.length],['Продано',L.length-U.length],['В продаже',U.length],['Стоимость остатка',money(d3.sum(U,a=>a.cost))]]);}).on('mouseleave',hideTip);
+const passesNoSale=a=>true;
+const lcol=d3.scaleSequential(d3.interpolateOranges).domain([0,14]);
+function renderLeft(){
+  lc.each(function(d){
+    const all=A.filter(a=>a.corp===d.c&&a.pv===d.v), L=all.filter(a=>F.grp===null||GROUPS[GNAME].key(a)===F.grp), U=L.filter(a=>!a.sold);
+    const sel=F.cell&&F.cell[0]===d.c&&F.cell[1]===d.v, g=d3.select(this);
+    g.select('.cell').attr('fill',!all.length?'#fff':U.length?lcol(U.length):'#eef6ee').attr('stroke',sel?'#1b1f27':(all.length?'#fff':'#f0f1f4')).attr('stroke-width',sel?2:1).attr('opacity',L.length?1:.35);
+    g.select('.ct').text(!all.length?'':U.length?U.length:'✓').style('fill',U.length>8?'#fff':(U.length?'#7c2d12':'#15803d')).style('font-weight',700);
+    g.style('cursor',all.length?'pointer':'default');
+  });
+}
+d3.select('#left').append('div').attr('class','hint').style('margin-top','4px').html('Число — сколько квартир осталось. Чем оранжевее, тем больше остаток. ✓ — всё продано, пусто — таких квартир нет.');
+
+/* ===== фильтры ===== */
+function renderFilters(){
+  const ch=[];
+  if(F.grp) ch.push(['grp',GNAME+': '+F.grp]);
+  if(F.mgr) ch.push(['mgr','Менеджер: '+F.mgr]);
+  if(F.wk) ch.push(['wk',`Недели: ${dm(wkStart(F.wk[0]))} — ${dm(d3.min([d3.timeDay.offset(wkStart(F.wk[1]),6),new Date(2026,8,30)]))}`]);
+  if(F.cell) ch.push(['cell',`${F.cell[0]} · вид ${F.cell[1]}`]);
+  const box=d3.select('#filters').html('');
+  if(!ch.length){box.append('span').attr('class','sub').text('Фильтры не выбраны — показан весь ЖК.');return;}
+  box.append('span').attr('class','sub').text('Фильтры:');
+  ch.forEach(([k,t])=>box.append('span').attr('class','chip').text(t+'  ✕').on('click',()=>{F[k]=null;update();}));
+  box.append('button').attr('class','reset').text('Сбросить всё').on('click',()=>{F.grp=F.mgr=F.wk=F.cell=null;update();});
+}
+function update(){renderKPI();renderMain();renderWeeks();renderMgr();renderLeft();renderFilters();}
+
+const seg=d3.select('#seg');
+Object.keys(GROUPS).forEach((k,i)=>seg.append('button').attr('class',i?null:'on').text(k).on('click',function(){seg.selectAll('button').classed('on',false);d3.select(this).classed('on',true);GNAME=k;F.grp=null;layoutMain();update();}));
+layoutMain(); update();
+</script>
+</body>
+</html>
